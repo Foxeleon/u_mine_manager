@@ -7,6 +7,7 @@ const SELECTORS = {
 let lastEnergyValue = 0;
 let buttonObserver = null;
 let maxEnergy = 0;
+let minEnergy = 0;
 let isFirstCheck = true;
 
 // Переменные для отслеживания майнинга
@@ -17,6 +18,10 @@ let totalMiningTime = 0;
 let totalMinedCoins = 0;
 let totalUsedEnergy = 0;
 let sessionStartTime = Date.now();
+
+// Переменные для измерения скорости восстановления энергии
+let energyRecoveryStartTime = null;
+let energyRecoveryStartValue = null;
 
 function getTimeString() {
     return new Date().toLocaleTimeString('ru-RU', { hour12: false });
@@ -32,7 +37,8 @@ function getEnergyValue() {
 function getBalanceValue() {
     const balanceElement = document.querySelector(SELECTORS.balanceSpan);
     if (!balanceElement) return null;
-    return parseFloat(balanceElement.textContent);
+    const balanceText = balanceElement.textContent.replace(/,/g, '');
+    return parseFloat(balanceText);
 }
 
 function calculateMiningStats(isStoppingMining = false) {
@@ -82,12 +88,7 @@ function checkButton() {
 
     const percentRemaining = ((currentEnergy / maxEnergy) * 100).toFixed(2);
 
-    console.log(`[${getTimeString()}] 
-    Процент оставшейся энергии: ${percentRemaining}%
-    Всего энергии: ${maxEnergy.toLocaleString()}
-    Текущая энергия: ${currentEnergy.toLocaleString()}
-    Баланс: ${getBalanceValue()?.toFixed(2)}
-    `);
+    console.log(`[${getTimeString()}] Процент оставшейся энергии: ${percentRemaining}`);
 
     if (currentEnergy >= maxEnergy) {
         if (buttonText.includes('Начать майнинг')) {
@@ -98,7 +99,7 @@ function checkButton() {
             button.click();
             console.log(`[${getTimeString()}] Запуск майнинга при энергии: ${currentEnergy.toLocaleString()}`);
         }
-    } else if (currentEnergy < 500) {
+    } else if (currentEnergy <= minEnergy) {
         if (buttonText.includes('Остановить майнинг')) {
             const stats = calculateMiningStats(true);
             button.click();
@@ -130,11 +131,36 @@ function checkButton() {
     isFirstCheck = false;
 }
 
-function startEnergyMonitor(totalEnergy) {
+function measureEnergyRecovery() {
+    const currentEnergy = getEnergyValue();
+    if (currentEnergy === null) return;
+
+    if (!energyRecoveryStartTime) {
+        energyRecoveryStartTime = Date.now();
+        energyRecoveryStartValue = currentEnergy;
+        setTimeout(measureEnergyRecovery, 30 * 60 * 1000); // Запускаем повторное измерение через 30 минут
+    } else {
+        const timeElapsed = (Date.now() - energyRecoveryStartTime) / 3600000; // в часах
+        const energyRecovered = currentEnergy - energyRecoveryStartValue;
+        const recoveryRate = energyRecovered / timeElapsed;
+
+        console.log(`[${getTimeString()}] Скорость восстановления энергии: ${recoveryRate.toFixed(2)} единиц/час`);
+
+        // Сбрасываем значения для следующего измерения
+        energyRecoveryStartTime = null;
+        energyRecoveryStartValue = null;
+
+        // Запускаем новое измерение
+        measureEnergyRecovery();
+    }
+}
+
+function startEnergyMonitor(totalEnergy, minEnergyLevel) {
     stopEnergyMonitor();
 
     isFirstCheck = true;
     maxEnergy = totalEnergy;
+    minEnergy = minEnergyLevel;
 
     const targetNode = document.querySelector(SELECTORS.energySpan)?.parentNode;
     if (!targetNode) {
@@ -155,8 +181,11 @@ function startEnergyMonitor(totalEnergy) {
         characterDataOldValue: true
     });
 
-    console.log(`[${getTimeString()}] Монитор энергии активирован. Целевая энергия: ${totalEnergy.toLocaleString()}`);
+    console.log(`[${getTimeString()}] Монитор энергии активирован. Максимальная энергия: ${totalEnergy.toLocaleString()}, Минимальная энергия: ${minEnergyLevel.toLocaleString()}`);
     checkButton();
+
+    // Запускаем измерение скорости восстановления энергии
+    measureEnergyRecovery();
 }
 
 function stopEnergyMonitor() {
@@ -168,5 +197,5 @@ function stopEnergyMonitor() {
 }
 
 // Пример использования:
-// startEnergyMonitor(9000); // Запуск с указанием максимальной энергии
+// startEnergyMonitor(9000, 500); // Запуск с указанием максимальной и минимальной энергии
 // stopEnergyMonitor(); // Для остановки
