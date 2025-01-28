@@ -9,6 +9,7 @@ let buttonObserver = null;
 let maxEnergy = 0;
 let minEnergy = 0;
 let isFirstCheck = true;
+let lastLogMessage = '';
 
 // Переменные для отслеживания майнинга
 let miningStartTime = null;
@@ -22,6 +23,18 @@ let sessionStartTime = Date.now();
 // Переменные для измерения скорости восстановления энергии
 let energyRecoveryStartTime = null;
 let energyRecoveryStartValue = null;
+
+function styledLog(message) {
+    const timeString = getTimeString();
+    const styledMessage = `%c[%c${timeString}%c] %c${message}`;
+    const timeStyle = 'font-weight: bold; color: black;';
+    const messageStyle = 'color: #006400; font-family: "Courier New", Courier, monospace;';
+
+    if (message !== lastLogMessage) {
+        console.log(styledMessage, 'color: black;', timeStyle, 'color: black;', messageStyle);
+        lastLogMessage = message;
+    }
+}
 
 function getTimeString() {
     return new Date().toLocaleTimeString('ru-RU', { hour12: false });
@@ -88,7 +101,7 @@ function checkButton() {
 
     const percentRemaining = ((currentEnergy / maxEnergy) * 100).toFixed(2);
 
-    console.log(`[${getTimeString()}] Процент оставшейся энергии: ${percentRemaining}`);
+    styledLog(`Процент оставшейся энергии: ${percentRemaining}%`);
 
     if (currentEnergy >= maxEnergy) {
         if (buttonText.includes('Начать майнинг')) {
@@ -97,7 +110,7 @@ function checkButton() {
             miningStartEnergy = currentEnergy;
 
             button.click();
-            console.log(`[${getTimeString()}] Запуск майнинга при энергии: ${currentEnergy.toLocaleString()}`);
+            styledLog(`Запуск майнинга при энергии: ${currentEnergy.toLocaleString()}`);
         }
     } else if (currentEnergy <= minEnergy) {
         if (buttonText.includes('Остановить майнинг')) {
@@ -105,7 +118,7 @@ function checkButton() {
             button.click();
 
             if (stats) {
-                console.log(`[${getTimeString()}] Остановка майнинга:
+                styledLog(`Остановка майнинга:
                 Длительность сессии: ${stats.sessionTime.toFixed(1)} сек
                 Добыто монет: ${stats.sessionCoins.toFixed(4)}
                 Использовано энергии: ${stats.sessionEnergy}
@@ -117,8 +130,7 @@ function checkButton() {
                 Всего добыто: ${stats.totalStats.totalCoins.toFixed(4)} монет
                 Всего использовано энергии: ${stats.totalStats.totalEnergy}
                 Средняя скорость: ${stats.totalStats.avgCoinsPerHour.toFixed(2)} монет/час
-                Средняя эффективность: ${stats.totalStats.avgCoinsPerEnergy.toFixed(4)} монет/100 энергии
-                `);
+                Средняя эффективность: ${stats.totalStats.avgCoinsPerEnergy.toFixed(4)} монет/100 энергии`);
             }
 
             miningStartTime = null;
@@ -144,7 +156,7 @@ function measureEnergyRecovery() {
         const energyRecovered = currentEnergy - energyRecoveryStartValue;
         const recoveryRate = energyRecovered / timeElapsed;
 
-        console.log(`[${getTimeString()}] Скорость восстановления энергии: ${recoveryRate.toFixed(2)} единиц/час`);
+        styledLog(`Скорость восстановления энергии: ${recoveryRate.toFixed(2)} единиц/час`);
 
         // Сбрасываем значения для следующего измерения
         energyRecoveryStartTime = null;
@@ -164,7 +176,7 @@ function startEnergyMonitor(totalEnergy, minEnergyLevel) {
 
     const targetNode = document.querySelector(SELECTORS.energySpan)?.parentNode;
     if (!targetNode) {
-        console.log(`[${getTimeString()}] Элемент энергии не найден`);
+        styledLog(`Элемент энергии не найден`);
         return;
     }
 
@@ -181,7 +193,7 @@ function startEnergyMonitor(totalEnergy, minEnergyLevel) {
         characterDataOldValue: true
     });
 
-    console.log(`[${getTimeString()}] Монитор энергии активирован. Максимальная энергия: ${totalEnergy.toLocaleString()}, Минимальная энергия: ${minEnergyLevel.toLocaleString()}`);
+    styledLog(`Монитор энергии активирован. Максимальная энергия: ${totalEnergy.toLocaleString()}, Минимальная энергия: ${minEnergyLevel.toLocaleString()}`);
     checkButton();
 
     // Запускаем измерение скорости восстановления энергии
@@ -192,7 +204,7 @@ function stopEnergyMonitor() {
     if (buttonObserver) {
         buttonObserver.disconnect();
         buttonObserver = null;
-        console.log(`[${getTimeString()}] Монитор энергии остановлен`);
+        styledLog(`Монитор энергии остановлен`);
     }
 }
 
