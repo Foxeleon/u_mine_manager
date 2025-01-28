@@ -1,3 +1,28 @@
+/**
+ * EnergyMonitor - Скрипт для автоматизации и мониторинга майнинга в игре.
+ *
+ * @version 1.0
+ * @author Andrey Wirz
+ *
+ * Основные возможности:
+ * - Автоматическое управление процессом майнинга
+ * - Мониторинг уровня энергии и баланса
+ * - Расчет статистики майнинга (скорость, эффективность)
+ * - Измерение скорости восстановления энергии
+ * - Логирование событий и статистики
+ *
+ * Использование:
+ * startEnergyMonitor(9000, 500); // Запуск мониторинга с максимальной энергией 9000 и минимальной 500
+ * stopEnergyMonitor(); // Остановка мониторинга
+ *
+ * Параметры startEnergyMonitor:
+ * - totalEnergy: максимальный уровень энергии
+ * - minEnergyLevel: минимальный уровень энергии для остановки майнинга
+ *
+ * Скрипт использует селекторы DOM для взаимодействия с элементами игрового интерфейса
+ * и MutationObserver для отслеживания изменений в игре.
+ */
+
 const SELECTORS = {
     energySpan: '#radix-\\:r0\\:-content-mining > div > div:nth-child(1) > div.p-4.pt-0 > div > div.space-y-2 > div.flex.justify-between.items-center > span:nth-child(2) > span',
     balanceSpan: '#radix-\\:r0\\:-content-mining > div > div:nth-child(1) > div.p-4.pt-0 > div > div.flex.justify-between.items-center > span:nth-child(2) > span',
