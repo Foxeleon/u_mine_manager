@@ -160,7 +160,7 @@ function checkButton() {
             styledLog(`Начата добыча с энергией: ${currentEnergy.toLocaleString()}`);
         }
     } else if (currentEnergy <= minEnergy) {
-        if (buttonText.includes('Остановить добычу')) {
+        if (buttonText.includes('Остановить майнинг')) {
             const stats = calculateMiningStats(true);
             button.click();
 
