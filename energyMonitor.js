@@ -29,7 +29,8 @@
 const SELECTORS = {
     balanceSpan: '#root > div:nth-child(2) > div > div > div:nth-child(1) > div.p-4.pt-0 > div.space-y-1 > div > span:nth-child(2) > span:nth-child(1)',
     energySpan: '#root > div:nth-child(2) > div > div > div:nth-child(1) > div.p-4.pt-0 > div:nth-child(2) > div > div.flex.justify-between.text-sm.cursor-pointer > span:nth-child(2) > span:nth-child(1)',
-    miningButton: '#root > div:nth-child(2) > footer > div.w-full.navbar-mining-bg.flex.justify-center.px-4 > div > button'
+    miningButton: '#root > div:nth-child(2) > footer > div.w-full.navbar-mining-bg.flex.justify-center.px-4 > div > button',
+    energyBarIndicator: '#root > div:nth-child(2) > div > div > div:nth-child(1) > div.p-4.pt-0 > div:nth-child(2) > div > div.space-y-1 > div > div'
 };
 
 // Переменные для хранения данных мониторинга
@@ -131,13 +132,13 @@ function checkButton() {
     if (!button) return;
 
     const buttonText = button.textContent.trim();
-    const energyBarElement = document.querySelector('#root > div:nth-child(2) > div > div > div:nth-child(1) > div.p-4.pt-0 > div:nth-child(2) > div > div.space-y-1 > div > div');
+    const energyBarElement = document.querySelector(SELECTORS.energyBarIndicator);
     const transformStyle = energyBarElement.style.transform;
     const energyPercentage = getPercentageFromTransformStyle(transformStyle);
 
 
     if (energyPercentage !== null) {
-        const currentEnergy = (100 - energyPercentage).toFixed(2);
+        const currentEnergy = (100 + energyPercentage).toFixed(2);
         styledLog(`Оставшаяся энергия в процентах: ${currentEnergy}%`);
 
         if (currentEnergy >= 100) {
@@ -263,6 +264,31 @@ function stopEnergyMonitor() {
         buttonObserver = null;
         styledLog('Мониторинг энергии остановлен');
     }
+}
+
+function logStatus() {
+    const energyBarElement = document.querySelector(SELECTORS.energyBarIndicator);
+
+    if (!energyBarElement) {
+        console.log('%cОШИБКА: Индикатор энергии не найден', 'color: red');
+        return;
+    }
+
+    const transformStyle = energyBarElement.style.transform;
+    const energyPercentage = getPercentageFromTransformStyle(transformStyle);
+    const remainingEnergy = (100 + energyPercentage).toFixed(2);
+
+    console.log(
+        '%cТекущие показатели:\n' +
+        `%cЭнергия: ${remainingEnergy}%\n` +
+        `Последнее значение энергии: ${lastEnergyValue}\n` +
+        `Максимальная энергия: ${maxEnergy}\n` +
+        `Минимальная энергия: ${minEnergy}\n` +
+        `Майнинг активен: ${miningStartTime !== null ? 'Да' : 'Нет'}\n` +
+        `Баланс: ${getBalanceValue().toFixed(1)} секунд\n` +
+        'color: blue; font-weight: bold',
+        'color: green'
+    );
 }
 
 // Пример использования функций startEnergyMonitor и stopEnergyMonitor
