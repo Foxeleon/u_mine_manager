@@ -36,8 +36,7 @@ const SELECTORS = {
 // Переменные для хранения данных мониторинга
 let lastEnergyValue = 0;
 let buttonObserver = null;
-let maxEnergy = 0;
-let minEnergy = 0;
+let minEnergy = 0; // % энергии для остановки майнинга
 let isFirstCheck = true;
 let lastLogMessage = '';
 
@@ -168,7 +167,7 @@ function checkButton() {
 
                 styledLog(`Начата добыча с энергией: ${currentEnergy.toLocaleString()}`);
             }
-        } else if (currentEnergy <= (minEnergy/maxEnergy)) {
+        } else if (currentEnergy <= minEnergy) {
             if (buttonText.includes('Остановить майнинг')) {
                 const stats = calculateMiningStats(true);
                 button.click();
@@ -224,11 +223,10 @@ function measureEnergyRecovery() {
 }
 
 // Функция для запуска мониторинга уровней энергии и процесса добычи ресурсов
-function startEnergyMonitor(totalEnergy, minEnergyLevel) {
+function startEnergyMonitor(minEnergyLevel) {
     stopEnergyMonitor();
 
     isFirstCheck = true;
-    maxEnergy = totalEnergy;
     minEnergy = minEnergyLevel;
 
     const targetNode = document.querySelector(SELECTORS.energySpan)?.parentNode;
@@ -250,7 +248,7 @@ function startEnergyMonitor(totalEnergy, minEnergyLevel) {
         characterDataOldValue: true
     });
 
-    styledLog(`Мониторинг энергии запущен. Максимальная энергия: ${totalEnergy.toLocaleString()}, Минимальная энергия: ${minEnergyLevel.toLocaleString()}`);
+    styledLog(`Мониторинг энергии запущен. Минимальная энергия: ${minEnergyLevel.toLocaleString()}`);
     checkButton();
 
     // Начать измерение восстановления энергии
@@ -282,7 +280,6 @@ function logStatus() {
         '%cТекущие показатели:\n' +
         `%cЭнергия: ${remainingEnergy}%\n` +
         `Последнее значение энергии: ${lastEnergyValue}\n` +
-        `Максимальная энергия: ${maxEnergy}\n` +
         `Минимальная энергия: ${minEnergy}\n` +
         `Майнинг активен: ${miningStartTime !== null ? 'Да' : 'Нет'}\n` +
         `Баланс: ${getBalanceValue().toFixed(1)} секунд\n` +
@@ -292,5 +289,5 @@ function logStatus() {
 }
 
 // Пример использования функций startEnergyMonitor и stopEnergyMonitor
-// startEnergyMonitor(9000, 500); // Запуск мониторинга с максимальной энергией 9000 и минимальной энергией 500
+// startEnergyMonitor(2); // Запуск мониторинга ограничением в 2% энергии для остановки
 // stopEnergyMonitor(); // Остановка мониторинга
