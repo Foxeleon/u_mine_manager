@@ -1,7 +1,7 @@
 /**
  * EnergyMonitor - Скрипт для автоматизации и мониторинга майнинга в игре.
  *
- * @version 2.0
+ * @version 3.0
  * @author Andrey Wirz
  *
  * Основные возможности:
@@ -117,75 +117,83 @@ function calculateMiningStats(isStoppingMining = false) {
     };
 }
 
+function getPercentageFromTransformStyle(style) {
+    const match = style.match(/translateX\((-?\d+(\.\d+)?)%\)/);
+    if (match) {
+        return parseFloat(match[1]);
+    }
+    return null;
+}
+
 // Функция для проверки кнопки добычи ресурсов и выполнения действий на основе уровней энергии
 function checkButton() {
     const button = document.querySelector(SELECTORS.miningButton);
     if (!button) return;
 
     const buttonText = button.textContent.trim();
-    const currentEnergy = getEnergyValue();
+    const energyBarElement = document.querySelector('#root > div:nth-child(2) > div > div > div:nth-child(1) > div.p-4.pt-0 > div:nth-child(2) > div > div.space-y-1 > div > div');
+    const transformStyle = energyBarElement.style.transform;
+    const energyPercentage = getPercentageFromTransformStyle(transformStyle);
 
-    if (currentEnergy === null) return;
-    if (currentEnergy === lastEnergyValue && !isFirstCheck) return;
 
-    const percentRemaining = ((currentEnergy / maxEnergy) * 100).toFixed(2);
+    if (energyPercentage !== null) {
+        const currentEnergy = (100 - energyPercentage).toFixed(2);
+        styledLog(`Оставшаяся энергия в процентах: ${currentEnergy}%`);
 
-    styledLog(`Оставшаяся энергия в процентах: ${percentRemaining}%`);
+        if (currentEnergy >= 100) {
+            if (buttonText.includes('Начать майнинг')) {
+                miningStartTime = Date.now();
+                miningStartBalance = getBalanceValue();
+                miningStartEnergy = currentEnergy;
 
-    if (currentEnergy >= maxEnergy) {
-        if (buttonText.includes('Начать майнинг')) {
-            miningStartTime = Date.now();
-            miningStartBalance = getBalanceValue();
-            miningStartEnergy = currentEnergy;
+                // Simulate a user click event at random coordinates within a 20x20 pixel area around the button's center
+                const buttonRect = button.getBoundingClientRect();
+                const centerX = buttonRect.left + buttonRect.width / 2;
+                const centerY = buttonRect.top + buttonRect.height / 2;
+                const randomX = centerX + (Math.random() * 20) - 10;
+                const randomY = centerY + (Math.random() * 20) - 10;
 
-            // Simulate a user click event at random coordinates within a 20x20 pixel area around the button's center
-            const buttonRect = button.getBoundingClientRect();
-            const centerX = buttonRect.left + buttonRect.width / 2;
-            const centerY = buttonRect.top + buttonRect.height / 2;
-            const randomX = centerX + (Math.random() * 20) - 10;
-            const randomY = centerY + (Math.random() * 20) - 10;
+                const event = new MouseEvent('click', {
+                    bubbles: true,
+                    cancelable: true,
+                    view: window,
+                    screenX: randomX,
+                    screenY: randomY,
+                    clientX: randomX,
+                    clientY: randomY
+                });
 
-            const event = new MouseEvent('click', {
-                bubbles: true,
-                cancelable: true,
-                view: window,
-                screenX: randomX,
-                screenY: randomY,
-                clientX: randomX,
-                clientY: randomY
-            });
+                button.dispatchEvent(event);
 
-            button.dispatchEvent(event);
-
-            styledLog(`Начата добыча с энергией: ${currentEnergy.toLocaleString()}`);
-        }
-    } else if (currentEnergy <= minEnergy) {
-        if (buttonText.includes('Остановить майнинг')) {
-            const stats = calculateMiningStats(true);
-            button.click();
-
-            if (stats) {
-                styledLog(`Остановлена добыча:
-                Время сессии: ${stats.sessionTime.toFixed(1)} секунд
-                Монеты получены: ${stats.sessionCoins.toFixed(4)}
-                Энергия использована: ${stats.sessionEnergy}
-                Монеты в час: ${stats.coinsPerHour.toFixed(2)}
-                Монеты на единицу энергии: ${stats.coinsPerEnergy.toFixed(4)}
-                
-                Общее время добычи: ${stats.totalStats.totalTime.toFixed(1)} секунд
-                Общие монеты получены: ${stats.totalStats.totalCoins.toFixed(4)}
-                Общая энергия использована: ${stats.totalStats.totalEnergy}
-                Средние монеты в час: ${stats.totalStats.avgCoinsPerHour.toFixed(2)}
-                Средние монеты на единицу энергии: ${stats.totalStats.avgCoinsPerEnergy.toFixed(4)}`);
+                styledLog(`Начата добыча с энергией: ${currentEnergy.toLocaleString()}`);
             }
+        } else if (currentEnergy <= (minEnergy/maxEnergy)) {
+            if (buttonText.includes('Остановить майнинг')) {
+                const stats = calculateMiningStats(true);
+                button.click();
 
-            miningStartTime = null;
-            miningStartBalance = null;
-            miningStartEnergy = null;
+                if (stats) {
+                    styledLog(`Остановлена добыча:
+                    Время сессии: ${stats.sessionTime.toFixed(1)} секунд
+                    Монеты получены: ${stats.sessionCoins.toFixed(4)}
+                    Энергия использована: ${stats.sessionEnergy}
+                    Монеты в час: ${stats.coinsPerHour.toFixed(2)}
+                    Монеты на единицу энергии: ${stats.coinsPerEnergy.toFixed(4)}
+                    
+                    Общее время добычи: ${stats.totalStats.totalTime.toFixed(1)} секунд
+                    Общие монеты получены: ${stats.totalStats.totalCoins.toFixed(4)}
+                    Общая энергия использована: ${stats.totalStats.totalEnergy}
+                    Средние монеты в час: ${stats.totalStats.avgCoinsPerHour.toFixed(2)}
+                    Средние монеты на единицу энергии: ${stats.totalStats.avgCoinsPerEnergy.toFixed(4)}`);
+                }
+
+                miningStartTime = null;
+                miningStartBalance = null;
+                miningStartEnergy = null;
+            }
         }
     }
-
-    lastEnergyValue = currentEnergy;
+    lastEnergyValue = getEnergyValue();
     isFirstCheck = false;
 }
 
