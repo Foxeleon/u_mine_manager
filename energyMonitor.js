@@ -1,7 +1,7 @@
 /**
  * EnergyMonitor - Скрипт для автоматизации и мониторинга майнинга в игре.
  *
- * @version 2.0
+ * @version 3.0
  * @author Andrey Wirz
  *
  * Основные возможности:
@@ -29,14 +29,14 @@
 const SELECTORS = {
     balanceSpan: '#root > div:nth-child(2) > div > div > div:nth-child(1) > div.p-4.pt-0 > div.space-y-1 > div > span:nth-child(2) > span:nth-child(1)',
     energySpan: '#root > div:nth-child(2) > div > div > div:nth-child(1) > div.p-4.pt-0 > div:nth-child(2) > div > div.flex.justify-between.text-sm.cursor-pointer > span:nth-child(2) > span:nth-child(1)',
-    miningButton: '#root > div:nth-child(2) > footer > div.w-full.navbar-mining-bg.flex.justify-center.px-4 > div > button'
+    miningButton: '#root > div:nth-child(2) > footer > div.w-full.navbar-mining-bg.flex.justify-center.px-4 > div > button',
+    energyBarIndicator: '#root > div:nth-child(2) > div > div > div:nth-child(1) > div.p-4.pt-0 > div:nth-child(2) > div > div.space-y-1 > div > div'
 };
 
 // Переменные для хранения данных мониторинга
 let lastEnergyValue = 0;
 let buttonObserver = null;
-let maxEnergy = 0;
-let minEnergy = 0;
+let minEnergy = 0; // % энергии для остановки майнинга
 let isFirstCheck = true;
 let lastLogMessage = '';
 
@@ -117,75 +117,82 @@ function calculateMiningStats(isStoppingMining = false) {
     };
 }
 
+function getPercentageFromTransformStyle(style) {
+    const match = style.match(/translateX\((-?\d+(\.\d+)?)%\)/);
+    if (match) {
+        return parseFloat(match[1]);
+    }
+    return null;
+}
+
 // Функция для проверки кнопки добычи ресурсов и выполнения действий на основе уровней энергии
 function checkButton() {
     const button = document.querySelector(SELECTORS.miningButton);
     if (!button) return;
 
     const buttonText = button.textContent.trim();
-    const currentEnergy = getEnergyValue();
+    const energyBarElement = document.querySelector(SELECTORS.energyBarIndicator);
+    const transformStyle = energyBarElement.style.transform;
+    const energyPercentage = getPercentageFromTransformStyle(transformStyle);
 
-    if (currentEnergy === null) return;
-    if (currentEnergy === lastEnergyValue && !isFirstCheck) return;
 
-    const percentRemaining = ((currentEnergy / maxEnergy) * 100).toFixed(2);
+    if (energyPercentage !== null) {
+        const currentEnergy = (100 + energyPercentage).toFixed(2);
+        styledLog(`Оставшаяся энергия в процентах: ${currentEnergy}%`);
 
-    styledLog(`Оставшаяся энергия в процентах: ${percentRemaining}%`);
+        if (currentEnergy >= 100) {
+            if (buttonText.includes('Начать майнинг')) {
+                miningStartTime = Date.now();
+                miningStartBalance = getBalanceValue();
+                miningStartEnergy = currentEnergy;
 
-    if (currentEnergy >= maxEnergy) {
-        if (buttonText.includes('Начать майнинг')) {
-            miningStartTime = Date.now();
-            miningStartBalance = getBalanceValue();
-            miningStartEnergy = currentEnergy;
+                // Simulate a user click event at random coordinates within a 20x20 pixel area around the button's center
+                const buttonRect = button.getBoundingClientRect();
+                const centerX = buttonRect.left + buttonRect.width / 2;
+                const centerY = buttonRect.top + buttonRect.height / 2;
+                const randomX = centerX + (Math.random() * 20) - 10;
+                const randomY = centerY + (Math.random() * 20) - 10;
 
-            // Simulate a user click event at random coordinates within a 20x20 pixel area around the button's center
-            const buttonRect = button.getBoundingClientRect();
-            const centerX = buttonRect.left + buttonRect.width / 2;
-            const centerY = buttonRect.top + buttonRect.height / 2;
-            const randomX = centerX + (Math.random() * 20) - 10;
-            const randomY = centerY + (Math.random() * 20) - 10;
+                const event = new MouseEvent('click', {
+                    bubbles: true,
+                    cancelable: true,
+                    view: window,
+                    screenX: randomX,
+                    screenY: randomY,
+                    clientX: randomX,
+                    clientY: randomY
+                });
 
-            const event = new MouseEvent('click', {
-                bubbles: true,
-                cancelable: true,
-                view: window,
-                screenX: randomX,
-                screenY: randomY,
-                clientX: randomX,
-                clientY: randomY
-            });
+                button.dispatchEvent(event);
 
-            button.dispatchEvent(event);
-
-            styledLog(`Начата добыча с энергией: ${currentEnergy.toLocaleString()}`);
-        }
-    } else if (currentEnergy <= minEnergy) {
-        if (buttonText.includes('Остановить майнинг')) {
-            const stats = calculateMiningStats(true);
-            button.click();
-
-            if (stats) {
-                styledLog(`Остановлена добыча:
-                Время сессии: ${stats.sessionTime.toFixed(1)} секунд
-                Монеты получены: ${stats.sessionCoins.toFixed(4)}
-                Энергия использована: ${stats.sessionEnergy}
-                Монеты в час: ${stats.coinsPerHour.toFixed(2)}
-                Монеты на единицу энергии: ${stats.coinsPerEnergy.toFixed(4)}
-                
-                Общее время добычи: ${stats.totalStats.totalTime.toFixed(1)} секунд
-                Общие монеты получены: ${stats.totalStats.totalCoins.toFixed(4)}
-                Общая энергия использована: ${stats.totalStats.totalEnergy}
-                Средние монеты в час: ${stats.totalStats.avgCoinsPerHour.toFixed(2)}
-                Средние монеты на единицу энергии: ${stats.totalStats.avgCoinsPerEnergy.toFixed(4)}`);
+                styledLog(`Начата добыча с энергией: ${currentEnergy.toLocaleString()}`);
             }
+        } else if (currentEnergy <= minEnergy) {
+            if (buttonText.includes('Остановить майнинг')) {
+                const stats = calculateMiningStats(true);
+                button.click();
 
-            miningStartTime = null;
-            miningStartBalance = null;
-            miningStartEnergy = null;
+                if (stats) {
+                    styledLog(`Остановлена добыча:
+                    Время сессии: ${stats.sessionTime.toFixed(1)} секунд
+                    Монеты получены: ${stats.sessionCoins.toFixed(4)}
+                    Энергия использована: ${stats.sessionEnergy}
+                    Монеты в час: ${stats.coinsPerHour.toFixed(2)}
+                    
+                    Общее время добычи: ${stats.totalStats.totalTime.toFixed(1)} секунд
+                    Общие монеты получены: ${stats.totalStats.totalCoins.toFixed(4)}
+                    Общая энергия использована: ${stats.totalStats.totalEnergy}
+                    Среднее количество монет в час: ${stats.totalStats.avgCoinsPerHour.toFixed(2)}
+                    Среднее количество монет на % энергии: ${stats.totalStats.avgCoinsPerEnergy.toFixed(4)}`);
+                }
+
+                miningStartTime = null;
+                miningStartBalance = null;
+                miningStartEnergy = null;
+            }
         }
     }
-
-    lastEnergyValue = currentEnergy;
+    lastEnergyValue = getEnergyValue();
     isFirstCheck = false;
 }
 
@@ -215,14 +222,14 @@ function measureEnergyRecovery() {
 }
 
 // Функция для запуска мониторинга уровней энергии и процесса добычи ресурсов
-function startEnergyMonitor(totalEnergy, minEnergyLevel) {
+function startEnergyMonitor(minEnergyLevel) {
     stopEnergyMonitor();
 
     isFirstCheck = true;
-    maxEnergy = totalEnergy;
     minEnergy = minEnergyLevel;
 
     const targetNode = document.querySelector(SELECTORS.energySpan)?.parentNode;
+
     if (!targetNode) {
         styledLog('Элемент энергии не найден');
         return;
@@ -238,10 +245,11 @@ function startEnergyMonitor(totalEnergy, minEnergyLevel) {
         childList: true,
         subtree: true,
         characterData: true,
-        characterDataOldValue: true
+        characterDataOldValue: true,
+        attributes: true
     });
 
-    styledLog(`Мониторинг энергии запущен. Максимальная энергия: ${totalEnergy.toLocaleString()}, Минимальная энергия: ${minEnergyLevel.toLocaleString()}`);
+    styledLog(`Мониторинг энергии запущен. Минимальная энергия: ${minEnergyLevel.toLocaleString()}`);
     checkButton();
 
     // Начать измерение восстановления энергии
@@ -257,6 +265,27 @@ function stopEnergyMonitor() {
     }
 }
 
+function logStatus() {
+    const energyBarElement = document.querySelector(SELECTORS.energyBarIndicator);
+
+    if (!energyBarElement) {
+        styledLog('%cОШИБКА: Индикатор энергии не найден', 'color: red');
+        return;
+    }
+
+    const transformStyle = energyBarElement.style.transform;
+    const energyPercentage = getPercentageFromTransformStyle(transformStyle);
+    const remainingEnergy = (100 + energyPercentage).toFixed(2);
+
+    styledLog(
+        '%cТекущие показатели:\n' +
+        `%cЭнергия: ${remainingEnergy}%\n` +
+        `Минимальная энергия: ${minEnergy}\n` +
+        `Майнинг активен: ${miningStartTime !== null ? 'Да' : 'Нет'}\n` +
+        `Баланс: ${getBalanceValue().toFixed(1)} секунд\n`
+    );
+}
+
 // Пример использования функций startEnergyMonitor и stopEnergyMonitor
-// startEnergyMonitor(9000, 500); // Запуск мониторинга с максимальной энергией 9000 и минимальной энергией 500
+// startEnergyMonitor(2); // Запуск мониторинга ограничением в 2% энергии для остановки
 // stopEnergyMonitor(); // Остановка мониторинга
