@@ -178,13 +178,12 @@ function checkButton() {
                     Монеты получены: ${stats.sessionCoins.toFixed(4)}
                     Энергия использована: ${stats.sessionEnergy}
                     Монеты в час: ${stats.coinsPerHour.toFixed(2)}
-                    Монеты на единицу энергии: ${stats.coinsPerEnergy.toFixed(4)}
                     
                     Общее время добычи: ${stats.totalStats.totalTime.toFixed(1)} секунд
                     Общие монеты получены: ${stats.totalStats.totalCoins.toFixed(4)}
                     Общая энергия использована: ${stats.totalStats.totalEnergy}
-                    Средние монеты в час: ${stats.totalStats.avgCoinsPerHour.toFixed(2)}
-                    Средние монеты на единицу энергии: ${stats.totalStats.avgCoinsPerEnergy.toFixed(4)}`);
+                    Среднее количество монет в час: ${stats.totalStats.avgCoinsPerHour.toFixed(2)}
+                    Среднее количество монет на % энергии: ${stats.totalStats.avgCoinsPerEnergy.toFixed(4)}`);
                 }
 
                 miningStartTime = null;
@@ -270,7 +269,7 @@ function logStatus() {
     const energyBarElement = document.querySelector(SELECTORS.energyBarIndicator);
 
     if (!energyBarElement) {
-        console.log('%cОШИБКА: Индикатор энергии не найден', 'color: red');
+        styledLog('%cОШИБКА: Индикатор энергии не найден', 'color: red');
         return;
     }
 
@@ -278,15 +277,12 @@ function logStatus() {
     const energyPercentage = getPercentageFromTransformStyle(transformStyle);
     const remainingEnergy = (100 + energyPercentage).toFixed(2);
 
-    console.log(
+    styledLog(
         '%cТекущие показатели:\n' +
         `%cЭнергия: ${remainingEnergy}%\n` +
-        `Последнее значение энергии: ${lastEnergyValue}\n` +
         `Минимальная энергия: ${minEnergy}\n` +
         `Майнинг активен: ${miningStartTime !== null ? 'Да' : 'Нет'}\n` +
-        `Баланс: ${getBalanceValue().toFixed(1)} секунд\n` +
-        'color: blue; font-weight: bold',
-        'color: green'
+        `Баланс: ${getBalanceValue().toFixed(1)} секунд\n`
     );
 }
 
