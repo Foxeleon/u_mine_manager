@@ -230,6 +230,7 @@ function startEnergyMonitor(minEnergyLevel) {
     minEnergy = minEnergyLevel;
 
     const targetNode = document.querySelector(SELECTORS.energySpan)?.parentNode;
+
     if (!targetNode) {
         styledLog('Элемент энергии не найден');
         return;
@@ -245,7 +246,8 @@ function startEnergyMonitor(minEnergyLevel) {
         childList: true,
         subtree: true,
         characterData: true,
-        characterDataOldValue: true
+        characterDataOldValue: true,
+        attributes: true
     });
 
     styledLog(`Мониторинг энергии запущен. Минимальная энергия: ${minEnergyLevel.toLocaleString()}`);
