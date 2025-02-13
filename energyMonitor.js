@@ -189,6 +189,7 @@ function checkButton() {
                 miningStartTime = null;
                 miningStartBalance = null;
                 miningStartEnergy = null;
+                startEnergyMonitor(minEnergy);
             }
         }
     }
