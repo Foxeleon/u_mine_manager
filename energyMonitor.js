@@ -125,6 +125,24 @@ function getPercentageFromTransformStyle(style) {
     return null;
 }
 
+function createEventForButton(button) {
+    const buttonRect = button.getBoundingClientRect();
+    const centerX = buttonRect.left + buttonRect.width / 2;
+    const centerY = buttonRect.top + buttonRect.height / 2;
+    const randomX = centerX + (Math.random() * 20) - 10;
+    const randomY = centerY + (Math.random() * 20) - 10;
+
+    return new MouseEvent('click', {
+        bubbles: true,
+        cancelable: true,
+        view: window,
+        screenX: randomX,
+        screenY: randomY,
+        clientX: randomX,
+        clientY: randomY
+    });
+}
+
 // Функция для проверки кнопки добычи ресурсов и выполнения действий на основе уровней энергии
 function checkButton() {
     const button = document.querySelector(SELECTORS.miningButton);
@@ -146,31 +164,15 @@ function checkButton() {
                 miningStartBalance = getBalanceValue();
                 miningStartEnergy = currentEnergy;
 
-                // Simulate a user click event at random coordinates within a 20x20 pixel area around the button's center
-                const buttonRect = button.getBoundingClientRect();
-                const centerX = buttonRect.left + buttonRect.width / 2;
-                const centerY = buttonRect.top + buttonRect.height / 2;
-                const randomX = centerX + (Math.random() * 20) - 10;
-                const randomY = centerY + (Math.random() * 20) - 10;
-
-                const event = new MouseEvent('click', {
-                    bubbles: true,
-                    cancelable: true,
-                    view: window,
-                    screenX: randomX,
-                    screenY: randomY,
-                    clientX: randomX,
-                    clientY: randomY
-                });
-
-                button.dispatchEvent(event);
+                button.dispatchEvent(createEventForButton(button));
 
                 styledLog(`Начата добыча с энергией: ${currentEnergy.toLocaleString()}`);
             }
         } else if (currentEnergy <= minEnergy) {
             if (buttonText.includes('Остановить майнинг')) {
                 const stats = calculateMiningStats(true);
-                button.click();
+
+                button.dispatchEvent(createEventForButton(button));
 
                 if (stats) {
                     styledLog(`Остановлена добыча:
@@ -189,7 +191,9 @@ function checkButton() {
                 miningStartTime = null;
                 miningStartBalance = null;
                 miningStartEnergy = null;
-                setTimeout(() => startEnergyMonitor(minEnergy), 5000)
+                setTimeout(() => {
+                    if (!miningStartTime || !miningStartBalance) startEnergyMonitor(minEnergy)
+                }, 300 * 60 * 1000)
             }
         }
     }
