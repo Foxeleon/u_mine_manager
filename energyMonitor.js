@@ -148,6 +148,7 @@ function checkButton() {
     const button = document.querySelector(SELECTORS.miningButton);
     if (!button) return;
 
+    let restartInterval = null;
     const buttonText = button.textContent.trim();
     const energyBarElement = document.querySelector(SELECTORS.energyBarIndicator);
     const transformStyle = energyBarElement.style.transform;
@@ -158,7 +159,8 @@ function checkButton() {
         const currentEnergy = (100 + energyPercentage).toFixed(2);
         styledLog(`Оставшаяся энергия в процентах: ${currentEnergy}%`);
 
-        if (currentEnergy >= 100) {
+        if (currentEnergy >= 99.5) {
+            if (!!restartInterval) clearInterval(restartInterval);
             if (buttonText.includes('Начать майнинг')) {
                 miningStartTime = Date.now();
                 miningStartBalance = getBalanceValue();
@@ -191,9 +193,9 @@ function checkButton() {
                 miningStartTime = null;
                 miningStartBalance = null;
                 miningStartEnergy = null;
-                setTimeout(() => {
+                restartInterval = setInterval(() => {
                     if (!miningStartTime || !miningStartBalance) startEnergyMonitor(minEnergy)
-                }, 300 * 60 * 1000)
+                }, 30 * 60 * 1000)
             }
         }
     }
