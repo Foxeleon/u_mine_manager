@@ -30,7 +30,9 @@ const SELECTORS = {
     balanceSpan: '#root > div:nth-child(2) > div > div > div:nth-child(1) > div.p-4.pt-0 > div.space-y-1 > div > span:nth-child(2) > span:nth-child(1)',
     energySpan: '#root > div:nth-child(2) > div > div > div:nth-child(1) > div.p-4.pt-0 > div:nth-child(2) > div > div.flex.justify-between.text-sm.cursor-pointer > span:nth-child(2) > span:nth-child(1)',
     miningButton: '#root > div:nth-child(2) > footer > div.w-full.navbar-mining-bg.flex.justify-center.px-4 > div > button',
-    energyBarIndicator: '#root > div:nth-child(2) > div > div > div:nth-child(1) > div.p-4.pt-0 > div:nth-child(2) > div > div.space-y-1 > div > div'
+    energyBarIndicator: '#root > div:nth-child(2) > div > div > div:nth-child(1) > div.p-4.pt-0 > div:nth-child(2) > div > div.space-y-1 > div > div',
+    miningTab: '#radix-\\:r3\\:-trigger-\\/mining',
+    rentTab: '#radix-\\:r3\\:-trigger-\\/miners\\/rent',
 };
 
 // Переменные для хранения данных мониторинга
@@ -143,6 +145,15 @@ function createEventForButton(button) {
     });
 }
 
+function delay(callback, ms = 0) {
+    return new Promise((resolve) => {
+        setTimeout(() => {
+            callback();
+            resolve();
+        }, ms);
+    });
+}
+
 // Функция для проверки кнопки добычи ресурсов и выполнения действий на основе уровней энергии
 function checkButton() {
     const button = document.querySelector(SELECTORS.miningButton);
@@ -172,9 +183,20 @@ function checkButton() {
             }
         } else if (currentEnergy <= minEnergy) {
             if (buttonText.includes('Остановить майнинг')) {
+                const miningTab = document.querySelector(SELECTORS.miningTab);
+                const rentTab = document.querySelector(SELECTORS.rentTab);
+
                 const stats = calculateMiningStats(true);
 
                 button.dispatchEvent(createEventForButton(button));
+
+                setTimeout(() => {
+                    rentTab.dispatchEvent(createEventForButton(rentTab))
+                }, 1000);
+
+                setTimeout(() => {
+                    miningTab.dispatchEvent(createEventForButton(miningTab))
+                }, 2000);
 
                 if (stats) {
                     styledLog(`Остановлена добыча:
