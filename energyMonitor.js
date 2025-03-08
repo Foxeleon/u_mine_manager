@@ -168,10 +168,10 @@ function checkButton() {
 
     if (energyPercentage !== null) {
         const currentEnergy = (100 + energyPercentage).toFixed(2);
-        styledLog(`Оставшаяся энергия в процентах: ${currentEnergy}%`);
+        // styledLog(`Оставшаяся энергия в процентах: ${currentEnergy}%`);
 
         if (currentEnergy >= 99.5) {
-            if (!!restartInterval) clearInterval(restartInterval);
+            clearInterval(restartInterval);
             if (buttonText.includes('Начать майнинг')) {
                 miningStartTime = Date.now();
                 miningStartBalance = getBalanceValue();
@@ -202,14 +202,7 @@ function checkButton() {
                     styledLog(`Остановлена добыча:
                     Время сессии: ${stats.sessionTime.toFixed(1)} секунд
                     Монеты получены: ${stats.sessionCoins.toFixed(4)}
-                    Энергия использована: ${stats.sessionEnergy}
-                    Монеты в час: ${stats.coinsPerHour.toFixed(2)}
-                    
-                    Общее время добычи: ${stats.totalStats.totalTime.toFixed(1)} секунд
-                    Общие монеты получены: ${stats.totalStats.totalCoins.toFixed(4)}
-                    Общая энергия использована: ${stats.totalStats.totalEnergy}
-                    Среднее количество монет в час: ${stats.totalStats.avgCoinsPerHour.toFixed(2)}
-                    Среднее количество монет на % энергии: ${stats.totalStats.avgCoinsPerEnergy.toFixed(4)}`);
+                    Монеты в час: ${stats.coinsPerHour.toFixed(2)}`);
                 }
 
                 miningStartTime = null;
@@ -226,29 +219,29 @@ function checkButton() {
 }
 
 // Функция для измерения восстановления энергии
-function measureEnergyRecovery() {
-    const currentEnergy = getEnergyValue();
-    if (currentEnergy === null) return;
-
-    if (!energyRecoveryStartTime) {
-        energyRecoveryStartTime = Date.now();
-        energyRecoveryStartValue = currentEnergy;
-        setTimeout(measureEnergyRecovery, 30 * 60 * 1000); // Проверка каждые 30 минут
-    } else {
-        const timeElapsed = (Date.now() - energyRecoveryStartTime) / 3600000; // Перевод в часы
-        const energyRecovered = currentEnergy - energyRecoveryStartValue;
-        const recoveryRate = energyRecovered / timeElapsed;
-
-        styledLog(`Скорость восстановления энергии: ${recoveryRate.toFixed(2)} единиц в час`);
-
-        // Сброс переменных для следующего измерения
-        energyRecoveryStartTime = null;
-        energyRecoveryStartValue = null;
-
-        // Перезапуск измерения
-        measureEnergyRecovery();
-    }
-}
+// function measureEnergyRecovery() {
+//     const currentEnergy = getEnergyValue();
+//     if (currentEnergy === null) return;
+//
+//     if (!energyRecoveryStartTime) {
+//         energyRecoveryStartTime = Date.now();
+//         energyRecoveryStartValue = currentEnergy;
+//         setTimeout(measureEnergyRecovery, 30 * 60 * 1000); // Проверка каждые 30 минут
+//     } else {
+//         const timeElapsed = (Date.now() - energyRecoveryStartTime) / 3600000; // Перевод в часы
+//         const energyRecovered = currentEnergy - energyRecoveryStartValue;
+//         const recoveryRate = energyRecovered / timeElapsed;
+//
+//         styledLog(`Скорость восстановления энергии: ${recoveryRate.toFixed(2)} единиц в час`);
+//
+//         // Сброс переменных для следующего измерения
+//         energyRecoveryStartTime = null;
+//         energyRecoveryStartValue = null;
+//
+//         // Перезапуск измерения
+//         measureEnergyRecovery();
+//     }
+// }
 
 // Функция для запуска мониторинга уровней энергии и процесса добычи ресурсов
 function startEnergyMonitor(minEnergyLevel) {
@@ -282,7 +275,7 @@ function startEnergyMonitor(minEnergyLevel) {
     checkButton();
 
     // Начать измерение восстановления энергии
-    measureEnergyRecovery();
+    // measureEnergyRecovery();
 }
 
 // Функция для остановки мониторинга уровней энергии и процесса добычи ресурсов
